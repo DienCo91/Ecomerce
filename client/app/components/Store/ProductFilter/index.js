@@ -8,6 +8,7 @@ import React from 'react';
 import { Card, CardBody, CardHeader } from 'reactstrap';
 
 import RangeSlider from '../../Common/RangeSlider';
+import { rating } from '../../../utils/rating';
 
 const priceMarks = {
   1: { label: <p className='fw-normal text-black'>$1</p> },
@@ -62,23 +63,7 @@ const rateMarks = {
   100: { label: <span>Any</span> }
 };
 
-const rating = v => {
-  switch (v) {
-    case 100:
-      return 0;
-    case 80:
-      return 1;
-    case 60:
-      return 2;
-    case 40:
-      return 3;
-    case 20:
-      return 4;
-    default:
-      0;
-      return 5;
-  }
-};
+
 
 const ProductFilter = props => {
   const { filterProducts } = props;
@@ -119,5 +104,4 @@ const ProductFilter = props => {
     </div>
   );
 };
-
 export default ProductFilter;
