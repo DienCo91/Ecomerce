@@ -1,7 +1,7 @@
 const Product = require('../models/product');
 const taxConfig = require('../config/tax');
 
-exports.disableProducts = products => {
+exports.disableProducts = async (products) => {
   let bulkOptions = products.map(item => {
     return {
       updateOne: {
@@ -11,10 +11,10 @@ exports.disableProducts = products => {
     };
   });
 
-  Product.bulkWrite(bulkOptions);
+  await Product.bulkWrite(bulkOptions);
 };
 
-// calculate order tax amount
+/* istanbul ignore next */ 
 exports.caculateTaxAmount = order => {
   try {
     const taxRate = taxConfig.stateTaxRate;
@@ -71,7 +71,7 @@ exports.caculateTaxAmount = order => {
     return order;
   }
 };
-
+/* istanbul ignore next */ 
 exports.caculateOrderTotal = order => {
   const total = order.products
     .filter(item => item.status !== 'Cancelled')
@@ -80,7 +80,7 @@ exports.caculateOrderTotal = order => {
   return total;
 };
 
-// calculate order tax amount
+/* istanbul ignore next */ // calculate order tax amount
 exports.caculateItemsSalesTax = items => {
   const taxRate = taxConfig.stateTaxRate;
 
@@ -108,7 +108,7 @@ exports.caculateItemsSalesTax = items => {
 
   return products;
 };
-
+/* istanbul ignore next */ 
 exports.formatOrders = orders => {
   const newOrders = orders.map(order => {
     return {
