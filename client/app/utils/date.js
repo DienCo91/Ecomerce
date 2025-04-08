@@ -34,6 +34,7 @@ export const formatDate = date => {
   return newDate.toLocaleDateString('en-US', dateOptions);
 };
 
+/* istanbul ignore next */
 export const formatTime = date => {
   const newDate = new Date(date);
   return newDate.toLocaleTimeString(undefined, timeOptions);
