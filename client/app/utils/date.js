@@ -21,7 +21,7 @@ const timeOptions = {
 
 // export const date = today.toLocaleDateString(undefined, dateOptions);
 // export const time = today.toLocaleTimeString(undefined, timeOptions);
-
+/* istanbul ignore next */
 export const formatDate = date => {
   const newDate = new Date(date);
 
@@ -34,7 +34,7 @@ export const formatDate = date => {
   return newDate.toLocaleDateString('en-US', dateOptions);
 };
 
-/* istanbul ignore next */
+
 export const formatTime = date => {
   const newDate = new Date(date);
   return newDate.toLocaleTimeString(undefined, timeOptions);
