@@ -41,8 +41,7 @@ exports.s3Upload = async image => {
   }
 };
 
-
-exports.localUpload = async (image) => {
+exports.localUpload = async image => {
   try {
     let imageUrl = '';
     let imageKey = '';
@@ -50,16 +49,16 @@ exports.localUpload = async (image) => {
     if (image) {
       const uniqueFilename = `${uuidv4()}-${image.originalname}`;
       imageKey = uniqueFilename;
-      
+
       const uploadDir = path.join(__dirname, '../public/uploads');
-      
+
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
       }
-      
+
       const filePath = path.join(uploadDir, uniqueFilename);
       fs.writeFileSync(filePath, image.buffer);
-      
+
       imageUrl = `/uploads/${uniqueFilename}`;
     }
 
