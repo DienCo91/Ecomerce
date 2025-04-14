@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom';
 import { Container, Row, Col } from 'reactstrap';
 
 import Button from '../../Common/Button';
+import { API_URL } from '../../../constants';
 
 const CartList = props => {
   const { cartItems, handleRemoveFromCart } = props;
@@ -31,7 +32,7 @@ const CartList = props => {
                       className='item-image mr-2'
                       src={`${
                         item.imageUrl
-                          ? item.imageUrl
+                          ? API_URL.replace("api","")+item.imageUrl
                           : '/images/placeholder-image.png'
                       }`}
                     />

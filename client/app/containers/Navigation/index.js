@@ -34,6 +34,7 @@ import { BarsIcon } from '../../components/Common/Icon';
 import MiniBrand from '../../components/Store//MiniBrand';
 import Menu from '../NavigationMenu';
 import Cart from '../Cart';
+import { API_URL } from '../../constants';
 
 class Navigation extends React.PureComponent {
   componentDidMount() {
@@ -83,7 +84,7 @@ class Navigation extends React.PureComponent {
             className='item-image'
             src={`${
               suggestion.imageUrl
-                ? suggestion.imageUrl
+                ? API_URL.replace("api","")+suggestion.imageUrl
                 : '/images/placeholder-image.png'
             }`}
           />

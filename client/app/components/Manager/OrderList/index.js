@@ -9,6 +9,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 import { formatDate } from '../../../utils/date';
+import { API_URL } from '../../../constants';
 
 const OrderList = props => {
   const { orders } = props;
@@ -21,7 +22,7 @@ const OrderList = props => {
           className='item-image'
           src={`${
             product && product?.imageUrl
-              ? product?.imageUrl
+              ? API_URL.replace("api","")+product?.imageUrl
               : '/images/placeholder-image.png'
           }`}
         />

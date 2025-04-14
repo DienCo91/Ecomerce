@@ -82,7 +82,7 @@ const OrderItems = props => {
     <div className='order-items pt-3'>
       <h2>Order Items</h2>
       <Row>
-        {order.products.map((item, index) => (
+        {order?.products&&order?.products?.map((item, index) => (
           <Col xs='12' key={index} className='item'>
             <div className='order-item-box'>
               <div className='d-flex justify-content-between flex-column flex-md-row'>
@@ -90,14 +90,14 @@ const OrderItems = props => {
                   <img
                     className='item-image'
                     src={`${
-                      item.product && item.product.imageUrl
-                        ? `${API_URL.replace("api","")}${product.imageUrl}`
+                      item?.product && item?.product?.imageUrl
+                        ? `${API_URL.replace("api","")}${item.product?.imageUrl}`
                         : '/images/placeholder-image.png'
                     }`}
                   />
                   <div className='d-md-flex flex-1 align-items-start ml-4 item-box'>
                     <div className='item-details'>
-                      {item.product ? (
+                      {item?.product ? (
                         <>
                           <Link
                             to={`/product/${item.product?.slug}`}
@@ -152,7 +152,7 @@ const OrderItems = props => {
                   </div>
                 </div>
               </div>
-              {item.product && (
+              {item?.product && (
                 <div className='text-right mt-2 mt-md-0'>
                   {renderItemsAction(item)}
                 </div>
