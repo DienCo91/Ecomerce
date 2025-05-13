@@ -59,7 +59,7 @@ router.get('/list/search/:name', async (req, res) => {
     const productDoc = await Product.find(
       { name: { $regex: new RegExp(name), $options: 'is' }, isActive: true },
       { name: 1, slug: 1, imageUrl: 1, price: 1, _id: 0 }
-    );
+    ).limit(20);
 
     if (productDoc.length < 0) {
       return res.status(404).json({
@@ -81,6 +81,7 @@ router.get('/list/search/:name', async (req, res) => {
 router.get('/list', async (req, res) => {
   try {
     let {
+      name,
       sortOrder,
       rating,
       max,
@@ -94,6 +95,14 @@ router.get('/list', async (req, res) => {
 
     const categoryFilter = category ? { category } : {};
     const basicQuery = getStoreProductsQuery(min, max, rating);
+
+    if (name && name.toLocaleLowerCase()!=="all") {
+      basicQuery.push({
+        $match: {
+          name: { $regex: name, $options: 'i' }
+        }
+      });
+    }
 
     const userDoc = await checkAuth(req);
     const categoryDoc = await Category.findOne({
@@ -125,10 +134,11 @@ router.get('/list', async (req, res) => {
       });
     }
 
+
     let products = null;
     const productsCount = await Product.aggregate(basicQuery);
     const count = productsCount.length;
-    const size = count > limit ? page - 1 : 0;
+    const size = page - 1 ;
     const currentPage = count > limit ? Number(page) : 1;
 
     // paginate query
@@ -345,32 +355,51 @@ router.put(
   '/:id',
   auth,
   role.check(ROLES.Admin, ROLES.Merchant),
+  upload.single('image'),
   async (req, res) => {
     try {
       const productId = req.params.id;
-      const update = req.body.product;
+      const update = req.body;
       const query = { _id: productId };
-      const { sku, slug } = req.body.product;
+      const { sku, slug, removeImage } = req.body;
 
       const foundProduct = await Product.findOne({
         $or: [{ slug }, { sku }]
       });
 
-      if (foundProduct && foundProduct._id != productId) {
+      if (foundProduct && foundProduct._id.toString() !== productId) {
         return res
           .status(400)
           .json({ error: 'Sku or slug is already in use.' });
       }
 
-      await Product.findOneAndUpdate(query, update, {
+      const currentProduct = await Product.findById(productId);
+
+      if (removeImage === 'true' && currentProduct?.imageKey) {
+        update.imageUrl = '';
+        update.imageKey = '';
+      }
+
+      // Nếu có ảnh mới
+      if (req.file) {
+        const { imageUrl, imageKey } = await localUpload(req.file);
+        update.imageUrl = imageUrl;
+        update.imageKey = imageKey;
+      }
+
+      console.log('============',update)
+
+      const updatedProduct = await Product.findOneAndUpdate(query, update, {
         new: true
       });
 
       res.status(200).json({
         success: true,
-        message: 'Product has been updated successfully!'
+        message: 'Product has been updated successfully!',
+        product: updatedProduct
       });
     } catch (error) {
+      console.error(error);
       res.status(400).json({
         error: 'Your request could not be processed. Please try again.'
       });

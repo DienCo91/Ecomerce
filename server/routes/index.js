@@ -1,8 +1,14 @@
 const router = require('express').Router();
 const apiRoutes = require('./api');
+const admin = require("firebase-admin");
 
 const keys = require('../config/keys');
+const serviceAccount = require("../constants/adminFirebase.json");
 const { apiURL } = keys.app;
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
 const api = `/${apiURL}`;
 

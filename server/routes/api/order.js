@@ -10,6 +10,7 @@ const auth = require('../../middleware/auth');
 const mailgun = require('../../services/mailgun');
 const store = require('../../utils/store');
 const { ROLES, CART_ITEM_STATUS } = require('../../constants');
+const { sendNotificationToUser } = require('../../utils/notification');
 
 router.post('/add', auth, async (req, res) => {
   try {
@@ -154,7 +155,7 @@ router.get('/', auth, async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({
-      error: 'Your request could not be processed. Please try again.'
+      error: `${error}`
     });
   }
 });
@@ -192,7 +193,7 @@ router.get('/me', auth, async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({
-      error: 'Your request could not be processed. Please try again.'
+      error: `${error}`
     });
   }
 });
@@ -293,6 +294,11 @@ router.put('/status/item/:itemId', auth, async (req, res) => {
       }
     );
 
+    if(foundCart.user.role != ROLES.Admin){
+      const userId = foundCart.user; 
+      await sendNotificationToUser(userId,'ORDER_CHANGE', 'Order Status Updated', `The order status has been changed to ${status}`,orderId);
+    }
+
     if (status === CART_ITEM_STATUS.Cancelled) {
       await Product.updateOne(
         { _id: foundCartProduct.product },
@@ -316,14 +322,17 @@ router.put('/status/item/:itemId', auth, async (req, res) => {
             req.user.role === ROLES.Admin ? 'Order' : 'Your order'
           } has been cancelled successfully`
         });
-      }
-
+      } 
+      
+      
       return res.status(200).json({
         success: true,
         message: 'Item has been cancelled successfully!'
       });
     }
 
+   
+    
     res.status(200).json({
       success: true,
       message: 'Item status has been updated successfully!'

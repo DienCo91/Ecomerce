@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const passport = require('passport');
+const admin = require('firebase-admin');
 
 const auth = require('../../middleware/auth');
 
@@ -18,7 +19,7 @@ const { secret, tokenLife } = keys.jwt;
 
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password,deviceToken } = req.body;
 
     if (!email) {
       return res
@@ -61,6 +62,12 @@ router.post('/login', async (req, res) => {
     if (!token) {
       throw new Error();
     }
+    console.log('deviceToken', deviceToken);
+    if(deviceToken){
+
+      user.deviceToken = deviceToken;
+      await user.save();
+    }
 
     res.status(200).json({
       success: true,
@@ -70,7 +77,8 @@ router.post('/login', async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        role: user.role
+        role: user.role,
+        phoneNumber:user.phoneNumber
       }
     });
   } catch (error) {
@@ -82,7 +90,7 @@ router.post('/login', async (req, res) => {
 
 router.post('/register', async (req, res) => {
   try {
-    const { email, firstName, lastName, password, isSubscribed } = req.body;
+    const { email, firstName, lastName, password, isSubscribed,deviceToken } = req.body;
 
     if (!email) {
       return res
@@ -119,7 +127,9 @@ router.post('/register', async (req, res) => {
       email,
       password,
       firstName,
-      lastName
+      lastName,
+      deviceToken:deviceToken||"",
+      
     });
 
     const salt = await bcrypt.genSalt(10);
@@ -345,5 +355,99 @@ router.get(
     res.redirect(`${keys.app.clientURL}/auth/success?token=${jwtToken}`);
   }
 );
+
+router.post('/google', async (req, res) => {
+  try {
+    const { idToken,deviceToken } = req.body;
+    console.log('deviceToken', deviceToken);
+    
+    if (!idToken) {
+      return res.status(400).json({ error: 'Thiếu idToken' });
+    }
+
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const { email, name,  uid } = decodedToken;
+
+    if (!email || !name) {
+      return res.status(400).json({ error: 'Không thể lấy thông tin từ token' });
+    }
+
+    let user = await User.findOne({ email });
+
+    if(deviceToken){
+
+      user.deviceToken = deviceToken;
+      await user.save();
+    }
+    if (!user) {
+      const [firstName, ...lastNameArr] = name.split(' ');
+      const lastName = lastNameArr.join(' ');
+
+      user = new User({
+        email,
+        firstName,
+        lastName,
+        password: '', 
+        googleId: uid,
+        deviceToken:deviceToken,
+        
+      });
+
+      await user.save();
+    }
+
+    const payload = { id: user.id };
+    const token = jwt.sign(payload, secret, { expiresIn: tokenLife });
+
+    res.status(200).json({
+      success: true,
+      token: `Bearer ${token}`,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        phoneNumber:user?.phoneNumber||"",
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(401).json({ error: 'Xác thực Google thất bại.' });
+  }
+});
+
+router.post('/logout', auth, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: { deviceToken: '' } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Logout successfully, device token cleared',
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message || 'An error occurred during logout',
+    });
+  }
+});
+
+
+
+
 
 module.exports = router;
