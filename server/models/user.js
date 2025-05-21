@@ -58,6 +58,8 @@ const UserSchema = new Schema({
   deviceToken: {
     type:String
   },
+  otpCode: String,
+  otpExpires: Date,
 });
 
 module.exports = Mongoose.model('User', UserSchema);

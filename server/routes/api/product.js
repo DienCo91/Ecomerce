@@ -96,7 +96,7 @@ router.get('/list', async (req, res) => {
     const categoryFilter = category ? { category } : {};
     const basicQuery = getStoreProductsQuery(min, max, rating);
 
-    if (name && name.toLocaleLowerCase()!=="all") {
+    if (name && name.toLocaleLowerCase() !== "all") {
       basicQuery.push({
         $match: {
           name: { $regex: name, $options: 'i' }
@@ -138,7 +138,7 @@ router.get('/list', async (req, res) => {
     let products = null;
     const productsCount = await Product.aggregate(basicQuery);
     const count = productsCount.length;
-    const size = page - 1 ;
+    const size = page - 1;
     const currentPage = count > limit ? Number(page) : 1;
 
     // paginate query
@@ -380,14 +380,19 @@ router.put(
         update.imageKey = '';
       }
 
-      // Nếu có ảnh mới
       if (req.file) {
         const { imageUrl, imageKey } = await localUpload(req.file);
         update.imageUrl = imageUrl;
         update.imageKey = imageKey;
       }
 
-      console.log('============',update)
+
+      if (update.quantity !== undefined) {
+        const quantity = Number(update.quantity);
+        if (!Number.isInteger(quantity) || quantity <= 0) {
+          return res.status(400).json({ error: 'Quantity must be an integer greater than 0' });
+        }
+      }
 
       const updatedProduct = await Product.findOneAndUpdate(query, update, {
         new: true

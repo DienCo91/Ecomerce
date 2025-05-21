@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const passport = require('passport');
 const admin = require('firebase-admin');
+const nodemailer = require('nodemailer');
 
 const auth = require('../../middleware/auth');
 
@@ -446,8 +447,129 @@ router.post('/logout', auth, async (req, res) => {
   }
 });
 
+const transporter = nodemailer.createTransport({
+  secure: true,
+  host: 'smtp.gmail.com',
+  port: 465,
+  auth: {
+    user: 'nguyennhatminh89203@gmail.com',
+    pass: 'yvzp mwfq pdtx cqih'
+  }
+});
 
 
+const sendMail = (to, subject, html) => {
+  return transporter.sendMail({
+    from: '"E commerce" <nguyennhatminh89203@gmail.com>',
+    to,
+    subject,
+    html
+  });
+};
+
+
+router.post('/verify', async (req, res) => {
+  try {
+    const { email } = req.body;
+    console.log("🚀 ~ router.post ~ email:", email)
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    user.otpCode = code;
+    user.otpExpires = Date.now() + 10 * 60 * 1000; 
+    await user.save();
+
+    const htmlContent = `
+      <div style="max-width: 600px; margin: auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+        <div style="text-align: center;">
+          <h2 style="color: #333;">🔒 Password reset request</h2>
+          <p style="font-size: 16px; color: #555;">We have received your request to reset your account password.</p>
+        </div>
+        <div style="background: #fff; padding: 20px; margin-top: 20px; border-radius: 6px; border: 1px solid #eee;">
+          <p style="margin: 0; color: #333; font-size: 15px;">Your confirmation code is:</p>
+          <h2 style="color: #007bff; text-align: center; margin: 20px 0;">${code}</h2>
+          <p style="font-size: 14px; color: #777;">Please use this code to complete the password reset process. The code is valid for 10 minutes.</p>
+        </div>
+        <div style="margin-top: 30px; text-align: center; font-size: 13px; color: #aaa;">
+          <p>&copy; 2025 E-Commerce App</p>
+        </div>
+      </div>
+    `;
+
+    await sendMail(email, 'Verification Code - Reset Password', htmlContent);
+
+    res.status(200).json({
+      success: true,
+      message: 'Verification code sent successfully'
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      error: error
+    });
+  }
+});
+
+
+router.post('/verify-code', async (req, res) => {
+  const { email, code } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'User not found' });
+  }
+
+  if (
+    user.otpCode !== code ||
+    !user.otpExpires ||
+    user.otpExpires < Date.now()
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: 'Verification code is invalid or expired',
+    });
+  }
+
+  user.otpCode = null;
+  user.otpExpires = null;
+  await user.save();
+
+  return res.status(200).json({
+    success: true,
+  });
+});
+
+
+router.post('/change-password', async (req, res) => {
+  const { email ,password} = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'User not found' });
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const hash = await bcrypt.hash(password, salt);
+  user.password = hash;
+
+  await user.save();
+
+  return res.status(200).json({
+    success: true,
+  });
+});
 
 
 module.exports = router;
