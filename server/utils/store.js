@@ -1,17 +1,15 @@
 const Product = require('../models/product');
 const taxConfig = require('../config/tax');
 
-exports.disableProducts = products => {
-  let bulkOptions = products.map(item => {
-    return {
-      updateOne: {
-        filter: { _id: item._id },
-        update: { isActive: false }
-      }
-    };
-  });
+exports.disableProducts = async products => {
+  const bulkOptions = products.map(item => ({
+    updateOne: {
+      filter: { _id: item._id },
+      update: { isActive: false }
+    }
+  }));
 
-  Product.bulkWrite(bulkOptions);
+  return await Product.bulkWrite(bulkOptions);
 };
 
 // calculate order tax amount
